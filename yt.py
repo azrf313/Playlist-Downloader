@@ -5,6 +5,7 @@
 """
 
 from pytube import YouTube, Playlist
+from progress.bar import IncrementalBar
 
 def get_streams(link):  # get all the streams (mp4 with audio and video) from the link
     try:
@@ -24,7 +25,6 @@ def get_resolution_dict(streams): # return a dict of resolutions available in gi
 
 def download(resolution, res_dict): # download the stream from the dict using given resolution
     try:
-        print(f"Downloading [{res_dict[resolution].title}]")
         res_dict[resolution].download()
         return 1
     except Exception as err:
@@ -43,23 +43,34 @@ def parse_playlist_link(link):
         return 0
 
 def main():
-    link = input("url: ")
+    quality = "360p"
+
+    # take the user input for link
+    link = ""
+    while link == "":
+        link = input("url: ")
 
     # if the link is a link to playlist download all vids
     if "playlist" in link:
         links = parse_playlist_link(link)
 
-        print(len(links), "Total links to download")
+        # set up for progress bar
+        bar = IncrementalBar(max=len(links))
+
         for l in links:
             streams = get_streams(l)
             d = get_resolution_dict(streams)
-            download("360p", d)
+            download(quality, d)
+            bar.next() # update bar
 
     # download the single video
     else:
         streams = get_streams(link)
         d = get_resolution_dict(streams)
-        download("360p", d)
+        print(f"Downloading.. {d[quality].title}")
+        download(quality, d)
+
+    bar.finish() # done with bar
 
 
 if __name__ == "__main__":
