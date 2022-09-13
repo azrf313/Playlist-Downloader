@@ -1,36 +1,53 @@
+#/usr/bin/python3
+
 """ 
 * A script to download youtube videos using pytube 
-* This script is heavily depended on the library pytube
+* This script is heavily dependend on the library pytube
 
 """
 
+import sys 
+import pytube
 from pytube import YouTube, Playlist
-from progress.bar import IncrementalBar
+from pytube.cli import on_progress
+import pytube.request
 
-def get_streams(link):  # get all the streams (mp4 with audio and video) from the link
+def error(msg, err):
+    print(msg)
+    print(err)
+    sys.exit(1)
+
+def get_streams(vid_obj):  
+    # get all the streams (mp4 with audio and video) from the link
     try:
-        vid = YouTube(link)
-        streams = vid.streams.filter(file_extension="mp4", progressive=True)
+        streams = vid_obj.streams.filter(file_extension="mp4", progressive=True)
         return streams
     except Exception as err:
-        print(f"Failed to parse link : {link}")
-        print(err)
-        return 0
+        error(f"Failed to extract streams: {link}", err)
 
-def get_resolution_dict(streams): # return a dict of resolutions available in given streams
+def get_resolution_dict(streams): 
+    # return a dict of resolutions available in given streams
     resolutions = dict()
     for s in streams:
         resolutions[s.resolution] = s
     return resolutions
 
-def download(resolution, res_dict): # download the stream from the dict using given resolution
+def download(vid_obj, resolution): 
     try:
+        streams = get_streams(vid_obj)
+        res_dict = get_resolution_dict(streams)
+
+        if not (resolution in res_dict.keys()):
+            error(f"Given video is not available in {resolution}")
+
+        print(f"Downloading \"{res_dict[resolution].title}\"")
         res_dict[resolution].download()
-        return 1
+        return True
+
     except Exception as err:
-        print("Failed to download video : {res_dict[resolution].title}")
+        print(f"Failed to download video : {res_dict[resolution].title}")
         print(err)
-        return 0
+        return False
 
 def parse_playlist_link(link):
     # return a list of all the youtube urls in a playlist
@@ -38,39 +55,47 @@ def parse_playlist_link(link):
         p = Playlist(link)
         return p.video_urls
     except Exception as err:
-        print("Unable to disassemble url")
-        print(err)
-        return 0
+        error("Unable to disassemble url", err)
+
+def is_link_playlist(link):
+    # return True or False
+    try:
+        p = Playlist(link)
+        urls = p.video_urls
+        if len(urls) > 0:
+            return True
+        else:
+            print("Not a playlist\n")
+            return False
+
+    except Exception as err:
+        print("Not a playlist\n")
+        return False
 
 def main():
     quality = "360p"
+    pytube.request.default_range_size = 10000
 
     # take the user input for link
+    """
     link = ""
     while link == "":
         link = input("url: ")
+        """
+    link = "https://www.youtube.com/watch?v=ig3Qa6IINYo"
+    #link = "https://www.youtube.com/watch?v=zgCnMvvw6Oo&list=PLpPXw4zFa0uKKhaSz87IowJnOTzh9tiBk"
 
     # if the link is a link to playlist download all vids
-    if "playlist" in link:
+    if is_link_playlist(link):
         links = parse_playlist_link(link)
-
-        # set up for progress bar
-        bar = IncrementalBar(max=len(links))
-
+        print(f"{len(links)} to download")
         for l in links:
-            streams = get_streams(l)
-            d = get_resolution_dict(streams)
-            download(quality, d)
-            bar.next() # update bar
+            vid = YouTube(link, on_progress_callback=on_progress)
+            download(vid, quality)
 
-    # download the single video
     else:
-        streams = get_streams(link)
-        d = get_resolution_dict(streams)
-        print(f"Downloading.. {d[quality].title}")
-        download(quality, d)
-
-    bar.finish() # done with bar
+        vid = YouTube(link, on_progress_callback=on_progress)
+        download(vid, quality)
 
 
 if __name__ == "__main__":
