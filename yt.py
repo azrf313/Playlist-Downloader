@@ -77,13 +77,9 @@ def main():
     pytube.request.default_range_size = 10000
 
     # take the user input for link
-    """
     link = ""
     while link == "":
         link = input("url: ")
-        """
-    link = "https://www.youtube.com/watch?v=ig3Qa6IINYo"
-    #link = "https://www.youtube.com/watch?v=zgCnMvvw6Oo&list=PLpPXw4zFa0uKKhaSz87IowJnOTzh9tiBk"
 
     # if the link is a link to playlist download all vids
     if is_link_playlist(link):
