@@ -1,4 +1,4 @@
-# cli_YT_downloader
+# Playlist-Downloader
 a command line YouTube downloader using pytube (also support playlist download)
 
 # usage
