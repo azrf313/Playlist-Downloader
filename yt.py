@@ -36,22 +36,8 @@ def download(vid_obj, resolution):
     streams = get_streams(vid_obj)
     res_dict = get_resolution_dict(streams)
 
-    """
-    if resolution not in res_dict.keys():
-        print(f"Given video is not available in {resolution}p", "")
-        
-        # switch resolution
-        if (resolution.startswith("360")):
-                print("Downloading in 720p")
-                resoluion = "720p"
-        else:
-                print("Downloading in 360p")
-                resoluion = "360p"
-                """
-
     try:
-
-        print(f"Downloading \"{res_dict[resolution].title}\"")
+        print(f"Downloading \"{res_dict[resolution].title}\" ")
         res_dict[resolution].download()
         return True
 
