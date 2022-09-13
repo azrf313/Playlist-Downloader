@@ -20,7 +20,7 @@ def error(msg, err):
 def get_streams(vid_obj):  
     # get all the streams (mp4 with audio and video) from the link
     try:
-        streams = vid_obj.streams.filter(file_extension="mp4", progressive=True)
+        streams = vid_obj.streams.filter(progressive=True)
         return streams
     except Exception as err:
         error(f"Failed to extract streams: {link}", err)
@@ -36,6 +36,7 @@ def download(vid_obj, resolution):
     streams = get_streams(vid_obj)
     res_dict = get_resolution_dict(streams)
 
+    """
     if resolution not in res_dict.keys():
         print(f"Given video is not available in {resolution}p", "")
         
@@ -46,6 +47,7 @@ def download(vid_obj, resolution):
         else:
                 print("Downloading in 360p")
                 resoluion = "360p"
+                """
 
     try:
 
@@ -74,12 +76,11 @@ def is_link_playlist(link):
         if len(urls) > 0:
             return True
         else:
-            print("Not a playlist\n")
             return False
 
     except Exception as err:
-        print("Not a playlist\n")
         return False
+
 
 def get_user_link():
     link = ""
@@ -88,43 +89,52 @@ def get_user_link():
     return link
 
 
-def get_user_quality():
-    qualities = ["360p", "720p", "360", "720"]
+def get_user_quality(available_qs):
     q = ""
     
     while (q == ""):
         q = input("Video quality > ")
-        if (q not in qualities):
-            print("Invalid Quality, Available : [360, 720]\n")
+        if (q not in available_qs):
+            print(f"Invalid Quality, Available : {available_qs}\n")
             q = "" # start over
-
-    if not q.endswith("p"): # make sure quality ends with 'p'
-        return q+"p"
 
     return q
 
+def find_q(link): # find the available downlaod qaulity for a given link and return a list
+    y = YouTube(link)
+    s = y.streams.filter(progressive=True)
+    qs = []
+
+    for i in s:
+        qs.append(i.resolution)
+    
+    return qs
 
 def main():
-    quality = "360p"
     pytube.request.default_range_size = 10000
 
     link = get_user_link()
-    quality = get_user_quality()
+    is_playlist = is_link_playlist(link)
+
+    if (is_playlist):
+        links = parse_playlist_link(link)
+        available_q = find_q(links[0]) # q for quality
+        print(f"\nChoose one from: {available_q}")
+        user_q = get_user_quality(available_q)
+
+        for link in links:
+            vid = YouTube(link, on_progress_callback=on_progress)
+            download(vid, user_q)
+
+    else:
+        available_q = find_q(link)
+        print(f"\nChoose one from: {available_q}")
+        user_q = get_user_quality(available_q)
+        vid = YouTube(link, on_progress_callback=on_progress)
+        download(vid, user_q)
 
     # link = "https://www.youtube.com/watch?v=ig3Qa6IINYo"
     # link = "https://www.youtube.com/watch?v=zgCnMvvw6Oo&list=PLpPXw4zFa0uKKhaSz87IowJnOTzh9tiBk"
-
-    # if the link is a link to playlist download all vids
-    if is_link_playlist(link):
-        links = parse_playlist_link(link)
-        print(f"{len(links)} to download")
-        for l in links:
-            vid = YouTube(l, on_progress_callback=on_progress)
-            download(vid, quality)
-
-    else:
-        vid = YouTube(link, on_progress_callback=on_progress)
-        download(vid, quality)
 
 
 if __name__ == "__main__":
