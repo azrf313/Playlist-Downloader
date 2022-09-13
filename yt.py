@@ -33,12 +33,21 @@ def get_resolution_dict(streams):
     return resolutions
 
 def download(vid_obj, resolution): 
-    try:
-        streams = get_streams(vid_obj)
-        res_dict = get_resolution_dict(streams)
+    streams = get_streams(vid_obj)
+    res_dict = get_resolution_dict(streams)
 
-        if not (resolution in res_dict.keys()):
-            error(f"Given video is not available in {resolution}")
+    if resolution not in res_dict.keys():
+        print(f"Given video is not available in {resolution}p", "")
+        
+        # switch resolution
+        if (resolution.startswith("360")):
+                print("Downloading in 720p")
+                resoluion = "720p"
+        else:
+                print("Downloading in 360p")
+                resoluion = "360p"
+
+    try:
 
         print(f"Downloading \"{res_dict[resolution].title}\"")
         res_dict[resolution].download()
@@ -72,25 +81,45 @@ def is_link_playlist(link):
         print("Not a playlist\n")
         return False
 
+def get_user_link():
+    link = ""
+    while (link == ""):
+        link = input("Url > ")
+    return link
+
+
+def get_user_quality():
+    qualities = ["360p", "720p", "360", "720"]
+    q = ""
+    
+    while (q == ""):
+        q = input("Video quality > ")
+        if (q not in qualities):
+            print("Invalid Quality, Available : [360, 720]\n")
+            q = "" # start over
+
+    if not q.endswith("p"): # make sure quality ends with 'p'
+        return q+"p"
+
+    return q
+
+
 def main():
     quality = "360p"
     pytube.request.default_range_size = 10000
 
-    # take the user input for link
-    """
-    link = ""
-    while link == "":
-        link = input("url: ")
-        """
-    link = "https://www.youtube.com/watch?v=ig3Qa6IINYo"
-    #link = "https://www.youtube.com/watch?v=zgCnMvvw6Oo&list=PLpPXw4zFa0uKKhaSz87IowJnOTzh9tiBk"
+    link = get_user_link()
+    quality = get_user_quality()
+
+    # link = "https://www.youtube.com/watch?v=ig3Qa6IINYo"
+    # link = "https://www.youtube.com/watch?v=zgCnMvvw6Oo&list=PLpPXw4zFa0uKKhaSz87IowJnOTzh9tiBk"
 
     # if the link is a link to playlist download all vids
     if is_link_playlist(link):
         links = parse_playlist_link(link)
         print(f"{len(links)} to download")
         for l in links:
-            vid = YouTube(link, on_progress_callback=on_progress)
+            vid = YouTube(l, on_progress_callback=on_progress)
             download(vid, quality)
 
     else:
