@@ -7,10 +7,15 @@
 """
 
 import sys 
+import os
 import pytube
 from pytube import YouTube, Playlist
 from pytube.cli import on_progress
 import pytube.request
+
+# globals
+DOWNLOAD_FOLDER = "YT__downloads"
+CURRENT_DOWNLOAD_FILENAME = ""
 
 def error(msg, err):
     print(msg)
@@ -36,23 +41,9 @@ def download(vid_obj, resolution):
     streams = get_streams(vid_obj)
     res_dict = get_resolution_dict(streams)
 
-    """
-    if resolution not in res_dict.keys():
-        print(f"Given video is not available in {resolution}p", "")
-        
-        # switch resolution
-        if (resolution.startswith("360")):
-                print("Downloading in 720p")
-                resoluion = "720p"
-        else:
-                print("Downloading in 360p")
-                resoluion = "360p"
-                """
-
     try:
-
-        print(f"Downloading \"{res_dict[resolution].title}\"")
-        res_dict[resolution].download()
+        print(f"\n\"{res_dict[resolution].title}\" ")
+        res_dict[resolution].download(output_path=DOWNLOAD_FOLDER)
         return True
 
     except Exception as err:
@@ -112,6 +103,7 @@ def find_q(link): # find the available downlaod qaulity for a given link and ret
 
 def main():
     pytube.request.default_range_size = 10000
+    os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
     link = get_user_link()
     is_playlist = is_link_playlist(link)
@@ -132,10 +124,6 @@ def main():
         user_q = get_user_quality(available_q)
         vid = YouTube(link, on_progress_callback=on_progress)
         download(vid, user_q)
-
-    # link = "https://www.youtube.com/watch?v=ig3Qa6IINYo"
-    # link = "https://www.youtube.com/watch?v=zgCnMvvw6Oo&list=PLpPXw4zFa0uKKhaSz87IowJnOTzh9tiBk"
-
 
 if __name__ == "__main__":
     main()
